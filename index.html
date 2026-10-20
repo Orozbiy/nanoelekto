@@ -1,0 +1,998 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset=utf8>
+  <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <style>
+    :root {
+      color-scheme: light;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    html {
+      scroll-padding-top: env(safe-area-inset-top, 0px)
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font: 14px -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #fff;
+      color: #000
+    }
+
+    img {
+      max-width: 100%
+    }
+
+    [hidden]:not([hidden=until-found i]) {
+      display: none !important
+    }
+  </style>
+</head>
+
+<body>
+  <title>ИМС Кристалл Цехи</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    /* Layout: үстүндө 3D сахна, астында операциялар тилкеси */
+    :root {
+      --bg: #0e1116;
+      --panel: #161b23;
+      --line: #273040;
+      --fg: #e8edf5;
+      --dim: #97a3b6;
+      --accent: #ff9a3c;
+      --cyan: #4ec8e0;
+      --font-display: 'Oswald', Impact, sans-serif;
+      --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg: #eef1f5;
+        --panel: #ffffff;
+        --line: #d3dae4;
+        --fg: #131821;
+        --dim: #5c6778;
+        --accent: #c25a00;
+        --cyan: #0d7f98;
+        color-scheme: light
+      }
+    }
+
+    :root[data-theme="light"] {
+      --bg: #eef1f5;
+      --panel: #fff;
+      --line: #d3dae4;
+      --fg: #131821;
+      --dim: #5c6778;
+      --accent: #c25a00;
+      --cyan: #0d7f98;
+      color-scheme: light
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      overflow: hidden
+    }
+
+    #app {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) clamp(146px, 24vh, 210px);
+      height: 100%
+    }
+
+    #stage {
+      grid-row: 1;
+      position: relative;
+      min-width: 0;
+      overflow: hidden
+    }
+
+    canvas {
+      display: block
+    }
+
+    .ref-label {
+      position: absolute;
+      z-index: 2;
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -120%);
+      padding: 4px 8px;
+      border: 1px solid var(--cyan);
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      color: var(--fg);
+      font: 600 12px var(--font-body);
+      white-space: nowrap;
+      pointer-events: none;
+      text-shadow: 0 1px 2px #000
+    }
+
+    #side {
+      grid-row: 2;
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-width: 0
+    }
+
+    #head {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding-block: 9px 8px;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      border-bottom: 1px solid var(--line)
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      letter-spacing: .05em;
+      margin: 0;
+      text-transform: uppercase;
+      white-space: nowrap
+    }
+
+    #sub {
+      font-size: 11px;
+      color: var(--dim);
+      line-height: 1.4;
+      flex: 1;
+      min-width: 200px
+    }
+
+    #list {
+      overflow-y: auto;
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 2px 6px;
+      align-content: start;
+      padding-block: 6px;
+      padding-left: max(10px, env(safe-area-inset-left, 0px));
+      padding-right: max(10px, env(safe-area-inset-right, 0px))
+    }
+
+    .it {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 7px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      width: 100%
+    }
+
+    .it:hover {
+      background: color-mix(in srgb, var(--accent) 10%, transparent)
+    }
+
+    .it[aria-current="true"] {
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+      border-color: var(--accent)
+    }
+
+    .num {
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums
+    }
+
+    .it>span:last-child {
+      display: block;
+      min-width: 0
+    }
+
+    .tt {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.25
+    }
+
+    .dd {
+      display: block;
+      font-size: 10.5px;
+      color: var(--dim);
+      line-height: 1.35;
+      margin-top: 2px
+    }
+
+    #cap {
+      position: absolute;
+      top: 12px;
+      left: max(12px, env(safe-area-inset-left, 0px));
+      max-width: min(340px, 42vw);
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 11px 13px
+    }
+
+    #capn {
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: .08em;
+      text-transform: uppercase
+    }
+
+    #capt {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 3px;
+      line-height: 1.3
+    }
+
+    #capd {
+      font-size: 12px;
+      color: var(--dim);
+      margin-top: 5px;
+      line-height: 1.45
+    }
+
+    #prog {
+      height: 3px;
+      background: var(--line);
+      border-radius: 2px;
+      margin-top: 9px;
+      overflow: hidden
+    }
+
+    #progi {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 2px
+    }
+
+    #scale {
+      position: absolute;
+      top: 12px;
+      right: max(12px, env(safe-area-inset-right, 0px));
+      width: 216px;
+      background: color-mix(in srgb, var(--panel) 90%, transparent);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--cyan);
+      border-radius: 8px;
+      padding: 11px 12px
+    }
+
+    #sct {
+      font-family: var(--font-display);
+      font-size: 11px;
+      color: var(--cyan);
+      letter-spacing: .08em;
+      text-transform: uppercase
+    }
+
+    #scv {
+      font-family: var(--font-display);
+      font-size: 22px;
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums
+    }
+
+    #bar {
+      height: 5px;
+      border: 1px solid var(--fg);
+      border-top: none;
+      margin-top: 6px;
+      opacity: .75
+    }
+
+    #barl {
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 3px;
+      font-variant-numeric: tabular-nums
+    }
+
+    #scw {
+      font-size: 11px;
+      color: var(--dim);
+      margin-top: 8px;
+      line-height: 1.4
+    }
+
+    #partinfo {
+      position: absolute;
+      left: max(12px, env(safe-area-inset-left, 0px));
+      bottom: 72px;
+      width: min(300px, 30vw);
+      max-height: min(42vh, 300px);
+      overflow-y: auto;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--cyan);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      box-shadow: 0 4px 18px #0003
+    }
+
+    #partinfo h2 {
+      margin: 0;
+      color: var(--cyan);
+      font: 600 12px var(--font-body);
+      letter-spacing: .06em;
+      text-transform: uppercase
+    }
+
+    #partinfo p {
+      margin: 6px 0 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--fg)
+    }
+
+    #zrow {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px
+    }
+
+    .zb {
+      flex: 1;
+      font-family: var(--font-display);
+      font-size: 16px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 0;
+      cursor: pointer
+    }
+
+    .zb:hover {
+      border-color: var(--cyan);
+      color: var(--cyan)
+    }
+
+    #preset {
+      display: grid;
+      gap: 3px;
+      margin-top: 8px
+    }
+
+    .pb {
+      font-size: 10.5px;
+      text-align: left;
+      background: none;
+      color: var(--dim);
+      border: 1px solid transparent;
+      border-radius: 5px;
+      padding: 4px 6px;
+      cursor: pointer;
+      font-family: var(--font-body)
+    }
+
+    .pb:hover {
+      background: color-mix(in srgb, var(--cyan) 12%, transparent);
+      color: var(--fg)
+    }
+
+    .pb[aria-current="true"] {
+      border-color: var(--cyan);
+      color: var(--cyan)
+    }
+
+    #ctl {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      padding-block: 12px;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      background: linear-gradient(to top, color-mix(in srgb, var(--bg) 92%, transparent), transparent)
+    }
+
+    button.ctl {
+      font-family: var(--font-display);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-size: 13px;
+      background: var(--panel);
+      color: var(--fg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 16px;
+      cursor: pointer
+    }
+
+    button.ctl:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    button.ctl:focus-visible,
+    .it:focus-visible,
+    .zb:focus-visible,
+    .pb:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px
+    }
+
+    #cnt {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+      min-width: 62px;
+      text-align: center
+    }
+
+    @media (max-width:760px) {
+      #app {
+        grid-template-rows: minmax(0, 1fr) 38%
+      }
+
+      h1 {
+        white-space: normal;
+        font-size: 13px
+      }
+
+      #sub {
+        display: none
+      }
+
+      #list {
+        grid-template-columns: minmax(0, 1fr)
+      }
+
+      #cap {
+        max-width: calc(100% - 24px)
+      }
+
+      #scale {
+        position: static;
+        width: auto;
+        margin: 0
+      }
+
+      #partinfo {
+        bottom: 120px;
+        width: min(260px, calc(100% - 24px));
+        max-height: 28vh
+      }
+
+      #scalewrap {
+        position: absolute;
+        top: auto;
+        bottom: 62px;
+        left: max(12px, env(safe-area-inset-left, 0px));
+        right: max(12px, env(safe-area-inset-right, 0px))
+      }
+
+      #preset {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+  </style>
+
+  <div id="app">
+    <div id="stage">
+      <div id="cap">
+        <div id="capn"></div>
+        <div id="capt"></div>
+        <div id="capd"></div>
+        <div id="prog">
+          <div id="progi"></div>
+        </div>
+      </div>
+      <section id="partinfo" aria-live="polite" hidden>
+        <h2 id="parttitle">Кристаллдын бөлүктөрү</h2>
+        <p id="parttext">Масштаб 400 мкмден кичирейгенде, ортодогу кристаллдын катмарын басып, анын түзүлүшү жана милдети тууралуу маалымат алыңыз.</p>
+      </section>
+      <div id="scalewrap">
+        <div id="scale">
+          <div id="sct">Көрүнүш масштабы</div>
+          <div id="scv">—</div>
+          <div id="bar"></div>
+          <div id="barl"></div>
+          <div id="scw"></div>
+          <div id="zrow">
+            <button class="zb" id="zin" title="Чоңойтуу">＋</button>
+            <button class="zb" id="zout" title="Кичирейтүү">－</button>
+          </div>
+          <div id="preset"></div>
+        </div>
+      </div>
+      <div id="ctl">
+        <button class="ctl" id="prev">◀ Артка</button>
+        <span id="cnt"></span>
+        <button class="ctl" id="play">▶ Автомат</button>
+        <button class="ctl" id="next">Алга ▶</button>
+      </div>
+    </div>
+    <div id="side">
+      <div id="head">
+        <h1>Планардык-эпитаксиалдык технология</h1>
+        <div id="sub">p-n өтмөктөр менен изоляцияланган биполярдык ИМС жасоонун 18 операциясы. Ар бир кадам 4 секунд
+          ичинде жандуу көрүнөт.</div>
+      </div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    /* ── МАСШТАБ ─────────────────────────────────────────────
+       1 бирдик = 0,5 мкм. Кристаллдын кесилиши 120 бирдик = 60 мкм.
+       Эпитаксиалдык катмар 14 бирдик = 7 мкм, окисел 2,2 бирдик = 1,1 мкм.  */
+    const UM = 0.5                       // бир бирдиктеги микрометр
+    const W = 120, D = 60, HS = 22, HE = 14, HOX = 2.2
+    const DUR = 4000                     // анимациянын узактыгы, мс
+
+    const STEPS = [
+      { t: "Пластинаны механикалык иштетүү", d: "p-типтеги Si пластинанын иштөөчү бети 14-класс тазалыкка чейин жылмаланат, бузулган катмар HCl буусунда чапталып алынат." },
+      { t: "Окистөө", d: "n-типтеги кошулманы диффузиялоодо коргоочу маска болуучу SiO₂ катмары өстүрүлөт (≈1 мкм)." },
+      { t: "Фотолитография — терезе ачуу", d: "Окиселде терезелер ачылып, жашыруун катмар түзүлө турган жерде локалдык диффузияга жол ачылат." },
+      { t: "Жашыруун n⁺-катмар диффузиясы", d: "Терезе аркылуу n-типтеги кошулма киргизилип, коллектордун каршылыгын төмөндөтүүчү n⁺ катмар түзүлөт." },
+      { t: "Окиселди алуу", d: "Калган SiO₂ толук алынып, бет эпитаксиалдык өстүрүүгө даярдалат." },
+      { t: "Эпитаксиалдык структура", d: "Бетине n-типтеги монокристаллдык кремний катмары өстүрүлөт (≈7 мкм) — ал транзистордун коллектору болот." },
+      { t: "Эпитаксиалдык катмарды окистөө", d: "Бөлүүчү (изоляциялоочу) диффузия үчүн коргоочу маска — жаңы SiO₂ катмары." },
+      { t: "Фотолитография — бөлүүчү терезелер", d: "Бөлүүчү диффузия жүрө турган тилкелерде окиселде терезелер ачылат." },
+      { t: "Бөлүүчү диффузия", d: "p-типтеги кошулма эпитаксиалдык катмардын бүт тереңдигине киргизилип, изоляцияланган чөнтөктөр (карман) түзүлөт." },
+      { t: "Окистөө", d: "Бет кайрадан окистелип, базалык диффузияга маска даярдалат." },
+      { t: "Фотолитография — база терезеси", d: "Базалык диффузия үчүн окиселде терезе ачылат." },
+      { t: "Базалык катмарды түзүү", d: "p-типтеги кошулманы диффузиялап, n-чөнтөктүн ичинде p-база түзүлөт (≈2 мкм тереңдикте)." },
+      { t: "Окистөө", d: "База түзүлгөндөн кийин бет кайра окистелет." },
+      { t: "Фотолитография — эмиттер терезеси", d: "Эмиттердик диффузия үчүн база үстүндө терезе ачылат." },
+      { t: "Эмиттердик катмарды түзүү", d: "n-типтеги кошулманы диффузиялап, базанын ичинде n⁺ эмиттер түзүлөт. Транзистор даяр." },
+      { t: "Фотолитография — контакт терезелери", d: "Коллектор, база, эмиттерге металл тийиши үчүн окиселде контакт терезелери ачылат." },
+      { t: "Алюминий чаңдатуу", d: "Бүт бетине алюминий пленкасы чаңдатылат (≈1 мкм) — ал разводка материалы." },
+      { t: "Разводка + коргоочу диэлектрик", d: "Фотолитография менен алюминийден жалгоо сүрөтү түзүлүп, үстүнө коргоочу диэлектрик катмары коюлат." }
+    ]
+    const PARTS = {
+      substrate: {
+        t: "Кремний подложкасы (p-тиби)",
+        d: "Бул кристаллдын негизги таянычы. p-типтеги кремний пластина механикалык иштетилип, жылмалангандан кийин анын үстүнө калган катмарлар кезеги менен өстүрүлөт жана түзүлөт."
+      },
+      buried: {
+        t: "Жашыруун n⁺ катмар",
+        d: "Подложканын үстүнө локалдык диффузия менен киргизилген күчтүү легирленген катмар. Ал транзистордун коллектордук жолунун электр каршылыгын азайтып, коллектор аркылуу токтун өтүшүн жакшыртат."
+      },
+      epitaxy: {
+        t: "n-типтеги эпитаксиалдык катмар",
+        d: "Подложканын үстүндө өстүрүлгөн монокристаллдык кремний катмары. Ал транзистордун коллекторун түзөт; кийинки p-типтеги бөлүүчү диффузия бул катмарды өзүнчө изоляцияланган чөнтөктөргө бөлөт."
+      },
+      isolation: {
+        t: "p-типтеги бөлүүчү диффузия",
+        d: "p-типтеги кошулма эпитаксиалдык катмардын бүт тереңдигине чейин кирет. Натыйжада n-типтеги коллектордук чөнтөктөр бири-биринен электрдик жактан бөлүнөт."
+      },
+      base: {
+        t: "p-типтеги база",
+        d: "Бөлүнгөн n-типтеги коллектордун ичине диффузияланган база катмары. Эмиттер менен коллектордун ортосундагы башкаруучу p-n өтмөктү түзүп, транзистордун иштешине катышат."
+      },
+      emitter: {
+        t: "n⁺-типтеги эмиттер",
+        d: "Базанын ичине киргизилген күчтүү легирленген n-типтеги аймак. Иштөө учурунда заряд алып жүрүүчүлөрдү базага берет; база жана коллектор менен бирге биполярдык транзисторду түзөт."
+      },
+      oxide: {
+        t: "SiO₂ окисел катмары",
+        d: "Кремний бетин изоляциялаган жана диффузия үчүн маска болгон катмар. Фотолитографияда анын керектүү жерлери гана ачылып, база, эмиттер жана контакт терезелери даярдалат."
+      },
+      aluminum: {
+        t: "Алюминий контакт катмары",
+        d: "Кремнийдеги контакт аймактарына электрдик туташуу түзгөн металл катмар. Ашыкча алюминий алынгандан кийин калган тилкелер элементтерди бири-бирине жана контакттарга туташтырат."
+      },
+      dielectric: {
+        t: "Коргоочу диэлектрик",
+        d: "Акыркы катмар металл жалгоолорду жана кристаллдын бетин сырттан коргойт. Ал керексиз электрдик тийишүүдөн, булгануудан жана механикалык таасирден сактайт."
+      }
+    }
+    const C = {
+      si: 0x6f7d8c, n: 0x4ea3d8, np: 0x2f86c4, p: 0xd4586a, ox: 0xb9c6d4, al: 0xe0e4e8,
+      chip: 0xb9c2cc, arduino: 0x08784c, hardware: 0x303943, hair: 0x6b4a32, skin: 0xd9a07c
+    }
+
+    const CONTACTS = [[-46, -38], [-16, 0], [8, 18]]
+    function gapsOf(i) {
+      if (i === 1) return []
+      if (i === 2 || i === 3) return [[-30, 30]]
+      if (i === 6) return []
+      if (i === 7) return [[-41, -27], [27, 41]]
+      if (i === 9) return []
+      if (i === 10 || i === 11) return [[-22, 14]]
+      if (i === 12) return []
+      if (i === 13 || i === 14) return [[-16, 0]]
+      if (i >= 15) return CONTACTS
+      return null                    // окисел жок (1,5-кадамдар)
+    }
+    // интервал арифметикасы
+    function sub(base, cuts) {
+      let out = base.slice()
+      for (const [a, b] of cuts) {
+        const nx = []
+        for (const [x, y] of out) {
+          if (b <= x || a >= y) { nx.push([x, y]); continue }
+          if (a > x) nx.push([x, a])
+          if (b < y) nx.push([b, y])
+        }
+        out = nx
+      }
+      return out.filter(([x, y]) => y - x > 0.01)
+    }
+    const cover = g => g === null ? [] : sub([[-W / 2, W / 2]], g)
+    function inter(A, B) { const o = []; for (const [a, b] of A) for (const [c, d] of B) { const x = Math.max(a, c), y = Math.min(b, d); if (y - x > 0.01) o.push([x, y]) } return o }
+
+    const stage = document.getElementById('stage')
+    const scene = new THREE.Scene()
+    const cam = new THREE.PerspectiveCamera(42, 1, 0.5, 4000000)
+    const rend = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true })
+    rend.setPixelRatio(Math.min(devicePixelRatio, 2))
+    stage.appendChild(rend.domElement)
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x3a4356, 0.85))
+    const dl = new THREE.DirectionalLight(0xffffff, 0.75); dl.position.set(90, 130, 80); scene.add(dl)
+    const dl2 = new THREE.DirectionalLight(0x9ec5ff, 0.35); dl2.position.set(-80, 40, -60); scene.add(dl2)
+    const group = new THREE.Group(), labels = new THREE.Group(), refs = new THREE.Group()
+    scene.add(group, labels, refs)
+
+    /* ── салыштыруу объекттери (чыныгы көлөмдөр) ── */
+    function mkRef() {
+      const mk = (g, c, op) => new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: c, transparent: op < 1, opacity: op }))
+      const part = (w, h, d, x, y, z, color) => {
+        const mesh = mk(new THREE.BoxGeometry(w, h, d), color, 1)
+        mesh.position.set(x, y, z); refs.add(mesh); return mesh
+      }
+      // Arduino Uno R3: 68.6 × 53.4 mm; 1 unit = 0.5 µm.
+      const board = part(137200, 3200, 106800, 0, -1600, 0, C.arduino)
+      board.name = 'arduino'
+      // 10 × 10 mm comparison crystal mounted on the board.
+      const chip = part(20000, 800, 20000, 10000, 400, -10000, C.chip)
+      chip.name = 'crystal'
+      // Simplified Uno connectors and headers, kept at board scale.
+      part(18000, 9000, 15000, -66000, 4500, 0, 0x9aa3ad)
+      part(11000, 8000, 12000, -52000, 4000, 18000, C.hardware)
+      part(56000, 3600, 6000, 4000, 1800, -44000, C.hardware)
+      part(42000, 3600, 6000, -8000, 1800, 44000, C.hardware)
+      part(16000, 1400, 12000, 26000, 700, -12000, C.hardware)
+      part(9000, 1200, 9000, -18000, 600, 10000, C.hardware)
+      // адамдын чачы: диаметри 70 мкм = 140 бирдик
+      const hair = mk(new THREE.CylinderGeometry(70, 70, 9000, 16), C.hair, 1)
+      hair.rotation.z = Math.PI / 2; hair.position.set(0, 70, -900); hair.name = 'hair'; refs.add(hair)
+      // бармактын учу: туурасы 16 мм
+      const fin = mk(new THREE.CylinderGeometry(8000, 8000, 34000, 24), C.skin, 1)
+      fin.rotation.x = Math.PI / 2; fin.position.set(0, -9000, -26000); fin.name = 'finger'; refs.add(fin)
+    }
+    mkRef()
+
+    const refLabelData = [
+      { name: 'arduino', text: 'Arduino Uno · 68,6 × 53,4 мм', point: new THREE.Vector3(-30000, 1500, 33000) },
+      { name: 'crystal', text: 'ИМС кристалл · 10 × 10 мм', point: new THREE.Vector3(10000, 1000, -10000) },
+      { name: 'hair', text: 'Адамдын чачы', point: new THREE.Vector3(0, 250, -900) },
+      { name: 'finger', text: 'Бармактын учу', point: new THREE.Vector3(0, -1000, -26000) }
+    ].map(item => {
+      const el = document.createElement('div'); el.className = 'ref-label'; el.textContent = item.text
+      stage.appendChild(el); return { ...item, el }
+    })
+    function updateRefLabels() {
+      const w = stage.clientWidth, h = stage.clientHeight
+      for (const item of refLabelData) {
+        const object = refs.getObjectByName(item.name)
+        const p = item.point.clone().project(cam)
+        const x = (p.x + 1) * w / 2, y = (1 - p.y) * h / 2
+        const visible = object.visible && p.z >= -1 && p.z <= 1 && x >= 0 && x <= w && y >= 0 && y <= h
+        item.el.style.display = visible ? 'block' : 'none'
+        if (visible) { item.el.style.left = x + 'px'; item.el.style.top = y + 'px' }
+      }
+    }
+
+    function box(w, h, d, x, y, z, color, opa, detail) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshLambertMaterial({ color, transparent: opa !== undefined, opacity: opa === undefined ? 1 : opa }))
+      m.position.set(x, y, z)
+      if (detail) m.userData.detail = detail
+      m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),
+        new THREE.LineBasicMaterial({ color: 0x0d1016, transparent: true, opacity: .35 })))
+      group.add(m); return m
+    }
+    /* anim: 'up' түптөн өсөт, 'down' бетинен ылдый өсөт, 'out' жоголот */
+    function grow(mesh, h, mode) { mesh.userData.anim = { h, mode, y: mesh.position.y }; return mesh }
+
+    function tag(text, x, y, z) {
+      const c = document.createElement('canvas'), s = 4; c.width = 256 * s; c.height = 64 * s
+      const g = c.getContext('2d'); g.scale(s, s)
+      g.fillStyle = 'rgba(14,17,22,.82)'; g.strokeStyle = '#ff9a3c'; g.lineWidth = 1.5
+      g.beginPath(); g.roundRect(2, 12, 252, 40, 7); g.fill(); g.stroke()
+      g.fillStyle = '#e8edf5'; g.font = '600 22px "IBM Plex Sans",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'
+      g.fillText(text, 128, 33, 240)
+      const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false }))
+      sp.position.set(x, y, z); sp.scale.set(44, 11, 1); labels.add(sp)
+    }
+    function clear(g) { while (g.children.length) { const o = g.children.pop(); o.geometry && o.geometry.dispose(); o.material && (o.material.map && o.material.map.dispose(), o.material.dispose()) } }
+
+    function build(i, prev) {
+      clear(group); clear(labels)
+      const epi = i >= 5, topE = epi ? HS + HE : HS
+      const isNew = s => i === s && prev === s - 1
+
+      box(W, HS, D, 0, HS / 2, 0, C.si, undefined, 'substrate')
+      tag('p — подложка', 0, -6, D / 2 + 2)
+
+      if (i >= 3) {
+        const yb = epi ? HS - 1.6 : HS - 1.2
+        const m = box(58, 3.2, D - 8, 0, yb + 1.6, 0, C.np, undefined, 'buried')
+        if (isNew(3)) { grow(m, 3.2, 'down'); tag('жашыруун n⁺', 0, HS + 9, 0) }
+      }
+      if (epi) {
+        const m = box(W, HE, D, 0, HS + HE / 2, 0, C.n, i >= 8 ? 0.55 : 0.9, 'epitaxy')
+        if (isNew(5)) { grow(m, HE, 'up'); tag('n — эпитаксия', 0, topE + 10, 0) }
+      }
+      if (i >= 8) {
+        [-34, 34].forEach(x => {
+          const m = box(13, HE + 1, D, x, HS + HE / 2, 0, C.p, undefined, 'isolation')
+          if (isNew(8)) { grow(m, HE + 1, 'down') }
+        })
+        if (isNew(8)) tag('бөлүүчү диффузия', 0, topE + 12, 0)
+      }
+      if (i >= 11) {
+        const m = box(34, 6.5, 34, -4, topE - 3.2, 0, C.p, undefined, 'base')
+        if (isNew(11)) { grow(m, 6.5, 'down'); tag('p — база', -4, topE + 10, 0) }
+      }
+      if (i >= 14) {
+        const m = box(15, 3.6, 16, -8, topE - 1.8, 0, C.np, undefined, 'emitter')
+        if (isNew(14)) { grow(m, 3.6, 'down'); tag('n⁺ — эмиттер', -8, topE + 10, 0) }
+      }
+
+      // окисел: учурдагы катмар + жоголуп жаткан бөлүктөрү
+      const gC = gapsOf(i), gP = gapsOf(prev)
+      const covC = cover(gC), covP = cover(gP)
+      for (const [a, b] of covC) {
+        const m = box(b - a, HOX, D, (a + b) / 2, topE + HOX / 2, 0, C.ox, undefined, 'oxide')
+        if (prev !== i && inter([[a, b]], covP).length === 0) grow(m, HOX, 'up')
+      }
+      if (prev !== i) {                       // алынып жаткан окисел
+        const gone = inter(covP, gC === null ? [[-W / 2, W / 2]] : gC)
+        for (const [a, b] of gone) {
+          const m = box(b - a, HOX, D, (a + b) / 2, topE + HOX / 2, 0, C.ox, 0.95, 'oxide')
+          grow(m, HOX, 'out')
+        }
+        if (gone.length) tag(gC === null ? 'окисел алынат' : 'терезе ачылат', 0, topE + 13, 0)
+        else if (covC.length && covP.length === 0) tag('SiO₂ окисел', 0, topE + 13, 0)
+      }
+
+      if (i === 16) {
+        const m = box(W, 2.4, D, 0, topE + HOX + 1.2, 0, C.al, undefined, 'aluminum')
+        if (isNew(16)) { grow(m, 2.4, 'up'); tag('Al пленкасы', 0, topE + 13, 0) }
+      }
+      if (i === 17) {
+        [[-42, 10], [-8, 12], [13, 12]].forEach(([x, w]) => box(w, 2.4, D - 14, x, topE + HOX + 1.2, 0, C.al, undefined, 'aluminum'))
+        if (prev === 16) {                     // ашыкча алюминий чапталат
+          [[-30, 18], [1, 5], [22, 34]].forEach(([x, w]) => grow(box(w, 2.4, D - 14, x, topE + HOX + 1.2, 0, C.al, .95), 2.4, 'out'))
+        }
+        const d = box(W, 1.4, D, 0, topE + HOX + 3.4, 0, C.ox, 0.45, 'dielectric')
+        if (prev === 16) { grow(d, 1.4, 'up'); tag('разводка + коргоо', 0, topE + 14, 0) }
+      }
+      if (i >= 15) { tag('К', -42, topE + 8, -D / 2 - 4); tag('Б', -8, topE + 8, -D / 2 - 4); tag('Э', 13, topE + 8, -D / 2 - 4) }
+    }
+
+    /* ── анимация ── */
+    let animT = 0, animing = false
+    function applyAnim(t) {
+      const ease = x => x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2
+      for (const m of group.children) {
+        const a = m.userData.anim; if (!a) continue
+        let p
+        if (a.mode === 'out') p = 1 - ease(Math.min(1, t / 0.45))            // адегенде жоголот
+        else p = ease(Math.max(0, Math.min(1, (t - 0.35) / 0.65)))         // анан өсөт
+        p = Math.max(0.0001, p)
+        m.scale.y = p
+        if (a.mode === 'down') m.position.y = a.y + a.h * (1 - p) / 2
+        else if (a.mode === 'up' || a.mode === 'out') m.position.y = a.y - a.h * (1 - p) / 2
+        if (m.material.transparent) m.material.opacity = (a.mode === 'out') ? p : Math.min(1, 0.35 + p)
+      }
+      labels.children.forEach(s => s.material.opacity = Math.min(1, t * 3))
+      document.getElementById('progi').style.width = (t * 100).toFixed(1) + '%'
+    }
+
+    /* ── камера жана масштаб ── */
+    let rot = -0.62, pit = 0.5, zoom = 1, drag = false, px = 0, py = 0, downX = 0, downY = 0, camDist = 200
+    let currentViewUm = Infinity, selectedPart = null
+    const raycaster = new THREE.Raycaster()
+    const pointer = new THREE.Vector2()
+    const partInfo = document.getElementById('partinfo')
+    const partTitle = document.getElementById('parttitle')
+    const partText = document.getElementById('parttext')
+    const R = 74
+    function place() {
+      const w = stage.clientWidth || 1, h = stage.clientHeight || 1
+      const vf = cam.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * (w / h))
+      camDist = R / Math.sin(Math.max(.25, Math.min(vf, hf)) / 2) * zoom
+      cam.position.set(Math.sin(rot) * Math.cos(pit) * camDist, Math.sin(pit) * camDist + 14 * Math.min(1, zoom), Math.cos(rot) * Math.cos(pit) * camDist)
+      cam.lookAt(0, 18 * Math.min(1, zoom), 0)
+      updScale()
+    }
+    function fmt(um) {
+      if (um < 1) return (um * 1000).toFixed(0) + ' нм'
+      if (um < 1000) return um.toFixed(um < 10 ? 1 : 0) + ' мкм'
+      if (um < 10000) return (um / 1000).toFixed(2) + ' мм'
+      return (um / 10000).toFixed(2) + ' см'
+    }
+    const WORLD = [
+      [0, 0.6, 'Атомдордон бир нече жүз эсе чоң. Эмиттердин калыңдыгы ушундай — көз менен эч качан көрүнбөйт.'],
+      [0.6, 8, 'Бир транзистордун өлчөмү. Оптикалык микроскоп дал ушул чекте токтойт.'],
+      [8, 80, '0,01 см = 0,1 мм = 100 мкм. Бул кагаздын калыңдыгындай — көз араң чалат.'],
+      [80, 800, 'Адамдын чачынын жоондугу ≈70 мкм. Мына ушул аралыкта чач кесилиш менен тең чыгат.'],
+      [800, 8000, 'Бүт кристалл ≈10×10 мм. Көз менен караганда бир тырмактай кара тактай көрүнөт.'],
+      [8000, 1e9, 'Arduino Uno 68,6 × 53,4 мм. Анын үстүндөгү 10 × 10 мм ИМС кристаллдын чыныгы салыштырма өлчөмү көрсөтүлөт.']
+    ]
+    function updScale() {
+      const w = stage.clientWidth || 1, h = stage.clientHeight || 1
+      const vf = cam.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * (w / h))
+      const visU = 2 * camDist * Math.tan(hf / 2)          // бирдик менен
+      const visUm = visU * UM                           // мкм менен
+      currentViewUm = visUm
+      document.getElementById('scv').textContent = fmt(visUm)
+      // масштаб сызыгы: эндин ~30 % тегерек санга
+      const target = visUm * 0.3, p = Math.pow(10, Math.floor(Math.log10(target)))
+      const n = [1, 2, 5, 10].find(k => k * p >= target) || 10, val = n * p
+      document.getElementById('bar').style.width = (val / visUm * 100).toFixed(1) + '%'
+      document.getElementById('barl').textContent = fmt(val)
+      const row = WORLD.find(r => visUm >= r[0] && visUm < r[1]) || WORLD[5]
+      document.getElementById('scw').textContent = row[2]
+      // салыштыруу объекттери
+      const arduinoView = visUm > 55000
+      refs.getObjectByName('arduino').visible = arduinoView
+      refs.getObjectByName('crystal').visible = arduinoView
+      refs.getObjectByName('hair').visible = !arduinoView && visUm > 120 && visUm < 40000
+      refs.getObjectByName('finger').visible = !arduinoView && visUm > 9000
+      const canInspect = visUm < 400
+      partInfo.hidden = !canInspect
+      if (!canInspect) selectedPart = null
+      else if (!selectedPart) {
+        partTitle.textContent = 'Кристаллдын бөлүктөрү'
+        partText.textContent = 'Ортодогу кристаллдын катмарын басып, анын түзүлүшү жана милдети тууралуу толук маалымат алыңыз.'
+      }
+      rend.domElement.style.cursor = canInspect ? 'pointer' : 'grab'
+      Array.from(document.querySelectorAll('.pb')).forEach(b =>
+        b.setAttribute('aria-current', Math.abs(Math.log(zoom / +b.dataset.z)) < 0.18))
+    }
+    const PRESETS = [
+      ['Эмиттер деңгээли · 10 мкм', 0.074],
+      ['Бир транзистор · 60 мкм', 0.44],
+      ['0,01 см = 0,1 мм', 0.735],
+      ['Чачтын жоондугу · 1 мм', 7.35],
+      ['Бүт кристалл · 1 см', 73.5],
+      ['Arduino Uno · 68,6 × 53,4 мм', 820],
+      ['Көз менен · 10 см', 735],
+    ]
+    const pr = document.getElementById('preset')
+    PRESETS.forEach(([t, z]) => {
+      const b = document.createElement('button'); b.className = 'pb'; b.type = 'button'; b.dataset.z = z; b.textContent = t
+      b.onclick = () => { setZoom(z) }; pr.appendChild(b)
+    })
+    function setZoom(z) { zoom = Math.max(0.04, Math.min(3000, z)); place() }
+    document.getElementById('zin').onclick = () => setZoom(zoom / 1.6)
+    document.getElementById('zout').onclick = () => setZoom(zoom * 1.6)
+    function detailAt(clientX, clientY) {
+      const rect = rend.domElement.getBoundingClientRect()
+      pointer.set((clientX - rect.left) / rect.width * 2 - 1, -((clientY - rect.top) / rect.height * 2 - 1))
+      raycaster.setFromCamera(pointer, cam)
+      for (const hit of raycaster.intersectObjects(group.children, true)) {
+        let object = hit.object
+        while (object && object !== group && !object.userData.detail) object = object.parent
+        if (object && object !== group && object.userData.detail) return object.userData.detail
+      }
+      return null
+    }
+    function showPart(key) {
+      const part = PARTS[key]
+      if (!part) return
+      selectedPart = key
+      partTitle.textContent = part.t
+      partText.textContent = part.d
+    }
+    rend.domElement.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return
+      drag = true; px = downX = e.clientX; py = downY = e.clientY
+      rend.domElement.style.cursor = 'grabbing'
+      rend.domElement.setPointerCapture(e.pointerId)
+    })
+    rend.domElement.addEventListener('pointermove', e => {
+      if (!drag) {
+        if (currentViewUm < 400) rend.domElement.style.cursor = detailAt(e.clientX, e.clientY) ? 'pointer' : 'grab'
+        return
+      }
+      rot -= (e.clientX - px) * .006; pit = Math.max(.06, Math.min(1.3, pit + (e.clientY - py) * .005)); px = e.clientX; py = e.clientY; place()
+    })
+    addEventListener('pointerup', e => {
+      if (!drag) return
+      const isClick = Math.hypot(e.clientX - downX, e.clientY - downY) < 5
+      drag = false
+      rend.domElement.style.cursor = currentViewUm < 400 ? 'pointer' : 'grab'
+      if (isClick && currentViewUm < 400) showPart(detailAt(e.clientX, e.clientY))
+    })
+    addEventListener('pointercancel', () => { drag = false; rend.domElement.style.cursor = currentViewUm < 400 ? 'pointer' : 'grab' })
+    rend.domElement.addEventListener('wheel', e => { e.preventDefault(); setZoom(zoom * Math.exp(e.deltaY * 0.0012)) }, { passive: false })
+
+    /* ── тизме жана башкаруу ── */
+    let cur = 0, prevStep = -1, timer = null
+    const list = document.getElementById('list')
+    STEPS.forEach((s, i) => {
+      const b = document.createElement('button'); b.className = 'it'; b.type = 'button'
+      b.innerHTML = '<span class="num">' + String(i + 1).padStart(2, '0') + '</span><span><span class="tt"></span><span class="dd"></span></span>'
+      b.querySelector('.tt').textContent = s.t; b.querySelector('.dd').textContent = s.d
+      b.onclick = () => go(i); list.appendChild(b)
+    })
+    function go(i) {
+      prevStep = cur; cur = (i + STEPS.length) % STEPS.length
+      build(cur, prevStep)
+      animT = 0; animing = true; applyAnim(0)
+      document.getElementById('capn').textContent = 'Операция ' + (cur + 1)
+      document.getElementById('capt').textContent = STEPS[cur].t
+      document.getElementById('capd').textContent = STEPS[cur].d
+      document.getElementById('cnt').textContent = (cur + 1) + ' / ' + STEPS.length
+      Array.from(list.children).forEach((c, k) => { c.setAttribute('aria-current', k === cur); if (k === cur) c.scrollIntoView({ block: 'nearest' }) })
+    }
+    document.getElementById('next').onclick = () => go(cur + 1)
+    document.getElementById('prev').onclick = () => go(cur - 1)
+    document.getElementById('play').onclick = e => {
+      if (timer) { clearInterval(timer); timer = null; e.target.textContent = '▶ Автомат' }
+      else { e.target.textContent = '■ Токтот'; timer = setInterval(() => go(cur + 1), DUR + 900) }
+    }
+    addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') go(cur + 1); if (e.key === 'ArrowLeft') go(cur - 1)
+      if (e.key === '+' || e.key === '=') setZoom(zoom / 1.6); if (e.key === '-') setZoom(zoom * 1.6)
+    })
+    let lw = 0, lh = 0, last = performance.now()
+    function render() {
+      const w = stage.clientWidth, h = stage.clientHeight
+      if (w && h && (w !== lw || h !== lh)) {
+        lw = w; lh = h; rend.setSize(w, h, false)
+        rend.domElement.style.width = w + 'px'; rend.domElement.style.height = h + 'px'
+        cam.aspect = w / h; cam.updateProjectionMatrix(); place()
+      }
+      updateRefLabels()
+      rend.render(scene, cam)
+    }
+    place(); go(0); prevStep = -1;
+    (function loop(now) {
+      requestAnimationFrame(loop)
+      const dt = Math.min(100, (now || 0) - last); last = now || 0
+      if (animing) { animT += dt / DUR; if (animT >= 1) { animT = 1; animing = false } applyAnim(animT) }
+      if (!drag && !timer && !animing) { rot += 0.0010; place() }
+      render()
+    })(performance.now());
+  </script>
+</body>
+</html>
